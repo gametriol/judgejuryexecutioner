@@ -90,6 +90,10 @@ app.get('/api/points/all', async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 });
+app.get(['/healthz', '/health'], (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 
 // Get all scores merged with application details from local test JSON
 // Returns array sorted by points desc: { rollNo, points, name, branch, imageUrl, ... }
