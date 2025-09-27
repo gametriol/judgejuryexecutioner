@@ -52,19 +52,33 @@ app.post('/api/scores/add', async (req, res) => {
 
   try {
     console.log('POST /api/scores/add payload:', { rollNo, points, rater });
-    // increment points and add rater to raters array (unique)
-  const update = { $inc: { points } };
+    // Legacy behaviour: increment total points
+    const update = { $inc: { points } };
     if (rater) {
       update.$addToSet = { raters: rater };
     }
 
+    // Apply legacy increment/update first
     const updated = await Score.findOneAndUpdate(
       { rollNo },
       update,
       { upsert: true, new: true }
     );
 
-    res.json({ rollNo: updated.rollNo, points: updated.points, raters: updated.raters || [] });
+    // If rater provided, append a rating entry (record how much this user rated)
+    if (rater) {
+      try {
+        await Score.updateOne(
+          { rollNo },
+          { $push: { ratings: { rater, points, createdAt: new Date() } } }
+        );
+      } catch (e) {
+        console.error('Failed to append rating entry', e);
+      }
+    }
+
+    const fresh = await Score.findOne({ rollNo }).lean();
+    res.json({ rollNo: fresh.rollNo, points: fresh.points, raters: fresh.raters || [], ratings: fresh.ratings || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -126,11 +140,13 @@ app.get('/api/scores/all-with-details', async (req, res) => {
     const docs = await Score.find({}).lean();
     const scoreMap = new Map(docs.map(d => [d.rollNo, d.points]));
     const raterMap = new Map(docs.map(d => [d.rollNo, d.raters || []]));
+    const ratingsMap = new Map(docs.map(d => [d.rollNo, d.ratings || []]));
 
     let merged = apps.map(a => ({
       rollNo: a.rollNo,
       points: scoreMap.get(a.rollNo) || 0,
       raters: raterMap.get(a.rollNo) || [],
+      ratings: ratingsMap.get(a.rollNo) || [],
       name: a.name || null,
       branch: a.branch || null,
       imageUrl: a.imageUrl || null,
