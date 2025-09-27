@@ -306,12 +306,16 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                         Number(scores.leadershipPotential || 0) +
                         Number(scores.overallRating || 0);
 
-                      const payload = { rollNo: candidate.rollNo, points: sum };
-
+                      const payload: any = { rollNo: candidate.rollNo, points: sum };
                       try {
-                        const url = `https://judgejuryexecutioner.onrender.com/api/scores/add`;
+                        // include rater username from localStorage if present
+                        const STORAGE_KEY = 'flux_current_user';
+                        const rater = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } })();
+                        if (rater) payload.rater = rater;
 
-                        const res = await fetch(url, {
+                        const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? 'http://localhost:4000';
+
+                        const res = await fetch(`${API_BASE}/api/scores/add`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(payload),
@@ -335,6 +339,11 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                         window.alert(
                           `Added ${sum} points to ${resultJson.rollNo}. New total: ${resultJson.points}`
                         );
+
+                        // refresh so the rated candidate is removed from the list (filtered by backend)
+                        try {
+                          window.location.reload();
+                        } catch (_) {}
                       } catch (err) {
                         console.error(err);
                         window.alert("Error sending points to backend");

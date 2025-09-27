@@ -43,7 +43,7 @@ app.get('/api/scores/roll/:rollNo', async (req, res) => {
 
 // Add score
 app.post('/api/scores/add', async (req, res) => {
-  const { rollNo, points } = req.body;
+  const { rollNo, points, rater } = req.body;
   if (!rollNo || typeof points !== 'number') {
     return res
       .status(400)
@@ -51,12 +51,20 @@ app.post('/api/scores/add', async (req, res) => {
   }
 
   try {
+    console.log('POST /api/scores/add payload:', { rollNo, points, rater });
+    // increment points and add rater to raters array (unique)
+  const update = { $inc: { points } };
+    if (rater) {
+      update.$addToSet = { raters: rater };
+    }
+
     const updated = await Score.findOneAndUpdate(
       { rollNo },
-      { $inc: { points } },
+      update,
       { upsert: true, new: true }
     );
-    res.json({ rollNo: updated.rollNo, points: updated.points });
+
+    res.json({ rollNo: updated.rollNo, points: updated.points, raters: updated.raters || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -112,18 +120,27 @@ app.get('/api/scores/all', async (req, res) => {
 
 app.get('/api/scores/all-with-details', async (req, res) => {
   try {
+    const rater = req.query.rater ? String(req.query.rater) : null;
+
     const apps = require('./test.applications.json');
     const docs = await Score.find({}).lean();
     const scoreMap = new Map(docs.map(d => [d.rollNo, d.points]));
+    const raterMap = new Map(docs.map(d => [d.rollNo, d.raters || []]));
 
-    const merged = apps.map(a => ({
+    let merged = apps.map(a => ({
       rollNo: a.rollNo,
       points: scoreMap.get(a.rollNo) || 0,
+      raters: raterMap.get(a.rollNo) || [],
       name: a.name || null,
       branch: a.branch || null,
       imageUrl: a.imageUrl || null,
       application: a,
     }));
+
+    // If rater provided, filter out any entries the rater already rated
+    if (rater) {
+      merged = merged.filter(item => !(Array.isArray(item.raters) && item.raters.includes(rater)));
+    }
 
     merged.sort((x, y) => (y.points || 0) - (x.points || 0));
     res.json(merged);

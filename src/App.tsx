@@ -3,12 +3,15 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { CandidateList } from '@/components/CandidateList';
 import { Candidate } from '@/types/candidate';
 import { Moon, Sun, Users, Database, Settings } from 'lucide-react';
-import rawApplications from '../test.applications.json';
+// Fetch applications from backend instead of bundling local JSON.
+// Backend base URL can be configured with Vite env var VITE_API_BASE
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:4000';
 import { Button } from '@/components/ui/button';
 import Leaderboards from '@/components/Leaderboards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ToastProvider } from '@/components/ui/toaster';
+import SignIn from '@/components/SignIn';
 import './App.css';
 
 // NOTE: we'll use the provided `test.applications.json` dataset (rawApplications)
@@ -55,16 +58,73 @@ const App: React.FC = () => {
     };
   };
 
-  // Immediately load normalized dataset from the provided test export
-  const initialCandidates: Candidate[] = Array.isArray(rawApplications) ? rawApplications.map((r: any) => normalizeApplication(r)) : [];
-  console.log('Loaded applications from test.applications.json:', initialCandidates.length);
-
   const [state, setState] = useState<AppState>({
-    candidates: initialCandidates,
-    loading: false,
+    candidates: [],
+    loading: true,
     error: null,
-    darkMode: false
+    darkMode: false,
   });
+
+  // Authentication (simple client-only signin)
+  const STORAGE_KEY = 'flux_current_user';
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY);
+    } catch (_e) {
+      return null;
+    }
+  });
+
+  // Fetch applications from backend (merged scores + application details) AFTER sign-in
+  useEffect(() => {
+    if (!currentUser) return; // don't fetch until signed in
+
+    let mounted = true;
+
+    const fetchCandidates = async () => {
+      setState((s) => ({ ...s, loading: true, error: null }));
+      try {
+        const raterParam = encodeURIComponent(currentUser ?? '');
+        const res = await fetch(`${API_BASE}/api/scores/all-with-details${raterParam ? `?rater=${raterParam}` : ''}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const merged = await res.json();
+
+        const apps = Array.isArray(merged)
+          ? merged.map((m: any) => (m && m.application ? m.application : m))
+          : [];
+
+        const normalized: Candidate[] = apps.map((a: any) => normalizeApplication(a));
+
+        if (!mounted) return;
+        setState((s) => ({ ...s, candidates: normalized, loading: false }));
+        console.log('Loaded applications from backend:', normalized.length);
+      } catch (err: any) {
+        console.error('Failed to load applications from backend', err);
+        if (!mounted) return;
+        setState((s) => ({ ...s, loading: false, error: String(err) }));
+      }
+    };
+
+    fetchCandidates();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser]);
+
+  const handleSignIn = (username: string) => {
+    setCurrentUser(username);
+    try {
+      localStorage.setItem(STORAGE_KEY, username);
+    } catch (_e) {}
+  };
+
+  const handleSignOut = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (_e) {}
+  };
 
   // Dark mode toggle
   const toggleDarkMode = (): void => {
@@ -122,9 +182,16 @@ const App: React.FC = () => {
                     )}
                   </Button>
 
-                  <Button variant="outline" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
+                  {currentUser ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm hidden sm:inline">Signed in: <strong>{currentUser}</strong></span>
+                      <Button variant="outline" size="sm" onClick={handleSignOut}>Sign out</Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -132,7 +199,11 @@ const App: React.FC = () => {
 
           {/* Main Content */}
           <main className="flex-1">
-            <MainView candidates={state.candidates} loading={state.loading} />
+            {!currentUser ? (
+              <SignIn onSignIn={handleSignIn} />
+            ) : (
+              <MainView candidates={state.candidates} loading={state.loading} />
+            )}
           </main>
         </div>
       </div>
