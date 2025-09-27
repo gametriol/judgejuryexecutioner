@@ -28,22 +28,71 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
       return clamp(snapped)
     }
 
-    const handlePointerDown = (e: React.PointerEvent) => {
-      (e.target as Element).setPointerCapture(e.pointerId)
+    const activePointerId = React.useRef<number | null>(null)
+
+    const startDrag = (clientX: number, pointerId?: number) => {
+      try {
+        if (pointerId != null && containerRef.current && (containerRef.current as any).setPointerCapture) {
+          (containerRef.current as any).setPointerCapture(pointerId)
+          activePointerId.current = pointerId
+        }
+      } catch {}
       setDragging(true)
-      const v = valueForClientX(e.clientX)
+      const v = valueForClientX(clientX)
       onValueChange([v])
+    }
+
+    const moveDrag = (clientX: number) => {
+      if (!dragging) return
+      const v = valueForClientX(clientX)
+      onValueChange([v])
+    }
+
+    const endDrag = (pointerId?: number) => {
+      try {
+        if (pointerId != null && containerRef.current && (containerRef.current as any).releasePointerCapture) {
+          try { (containerRef.current as any).releasePointerCapture(pointerId) } catch {}
+        } else if (activePointerId.current != null && containerRef.current && (containerRef.current as any).releasePointerCapture) {
+          try { (containerRef.current as any).releasePointerCapture(activePointerId.current) } catch {}
+        }
+      } catch {}
+      activePointerId.current = null
+      setDragging(false)
+    }
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+      // Only handle primary button/touch
+      if (e.button && e.button !== 0) return
+      startDrag(e.clientX, e.pointerId)
     }
 
     const handlePointerMove = (e: React.PointerEvent) => {
-      if (!dragging) return
-      const v = valueForClientX(e.clientX)
-      onValueChange([v])
+      moveDrag(e.clientX)
     }
 
     const handlePointerUp = (e: React.PointerEvent) => {
-      try { (e.target as Element).releasePointerCapture(e.pointerId) } catch {}
-      setDragging(false)
+      endDrag(e.pointerId)
+    }
+
+    const handlePointerCancel = (_e: React.PointerEvent) => {
+      endDrag()
+    }
+
+    // Touch fallback for environments without pointer events
+    const handleTouchStart = (e: React.TouchEvent) => {
+      if (e.touches && e.touches[0]) {
+        startDrag(e.touches[0].clientX)
+      }
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (e.touches && e.touches[0]) {
+        moveDrag(e.touches[0].clientX)
+      }
+    }
+
+    const handleTouchEnd = (_e: React.TouchEvent) => {
+      endDrag()
     }
 
     const handleKey = (e: React.KeyboardEvent) => {
@@ -57,6 +106,14 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
       <div
         ref={containerRef}
         className={`relative w-full h-5 flex items-center select-none ${className}`}
+        style={{ touchAction: 'pan-y' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         {...props}
       >
         {/* Track */}
@@ -73,9 +130,6 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           aria-valuemax={max}
           aria-valuenow={value[0]}
           onKeyDown={handleKey}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
           className="relative z-10 w-4 h-4 rounded-full bg-white border-2 border-blue-600 shadow cursor-pointer"
           style={{ left: `calc(${pct}% - 8px)` }}
         />
