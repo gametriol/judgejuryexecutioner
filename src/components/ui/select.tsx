@@ -19,13 +19,8 @@ export const Select: React.FC<SelectProps> = ({
   className,
   ...rest
 }) => {
-  // Extract trigger
-  const trigger = React.Children.toArray(children).find(
-    (c: any) =>
-      React.isValidElement(c) &&
-      c.type &&
-      (c.type as any).displayName === "SelectTrigger"
-  );
+  // Extract visual trigger (first SelectTrigger child) and option items
+  const trigger = React.Children.toArray(children).find((c: any) => React.isValidElement(c) && c.type === SelectTrigger);
 
   // Collect items
   const items: Array<{ value: string; label: React.ReactNode }> = [];
@@ -46,7 +41,7 @@ export const Select: React.FC<SelectProps> = ({
       {...rest}
       style={{ position: "relative", display: "inline-block" }}
     >
-      <div aria-hidden>
+      <div>
         {trigger ? (trigger as any).props.children : null}
       </div>
 
@@ -76,8 +71,6 @@ export const Select: React.FC<SelectProps> = ({
 export const SelectTrigger: React.FC<
   React.HTMLAttributes<HTMLDivElement>
 > = ({ children, ...props }) => {
-  const Comp: any = (p: any) => <div {...p}>{children}</div>;
-  Comp.displayName = "SelectTrigger";
   return <div {...props}>{children}</div>;
 };
 

@@ -1,53 +1,83 @@
 // src/components/CandidateList.tsx
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Users, GraduationCap, RefreshCw, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CandidateCard } from './CandidateCard';
-import { CandidateDetail } from './CandidateDetail';
-import { Candidate, FilterOptions } from '@/types/candidate';
+import React, { useState, useMemo } from "react";
+import {
+  Search,
+  Filter,
+  Users,
+  GraduationCap,
+  RefreshCw,
+  X,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { CandidateCard } from "./CandidateCard";
+import { CandidateDetail } from "./CandidateDetail";
+import { Candidate, FilterOptions } from "@/types/candidate";
 
 interface CandidateListProps {
   candidates: Candidate[];
   loading?: boolean;
 }
 
-export const CandidateList: React.FC<CandidateListProps> = ({ 
-  candidates, 
-  loading = false 
+export const CandidateList: React.FC<CandidateListProps> = ({
+  candidates,
+  loading = false,
 }) => {
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+    null
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<FilterOptions>({
-    search: '',
-    branch: '',
-    year: '',
-    society: ''
+    search: "",
+    branch: "",
+    year: "",
+    society: "",
   });
 
   const itemsPerPage = 9; // Reduced to 9 for better display with larger cards (3x3 grid)
 
   // Memoized filtering and pagination logic
-  const { filteredCandidates, stats, uniqueBranches, uniqueYears, uniqueSocieties } = useMemo(() => {
-    let filtered = candidates.filter(candidate => {
-      const searchMatch = candidate.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         candidate.rollNo.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         candidate.email.toLowerCase().includes(filters.search.toLowerCase());
-      
-      const branchMatch = !filters.branch || candidate.branch === filters.branch;
+  const {
+    filteredCandidates,
+    stats,
+    uniqueBranches,
+    uniqueYears,
+    uniqueSocieties,
+  } = useMemo(() => {
+    let filtered = candidates.filter((candidate) => {
+      const searchMatch =
+        candidate.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        candidate.rollNo.toLowerCase().includes(filters.search.toLowerCase()) ||
+        candidate.email.toLowerCase().includes(filters.search.toLowerCase());
+
+      const branchMatch =
+        !filters.branch || candidate.branch === filters.branch;
       const yearMatch = !filters.year || candidate.year === filters.year;
-      const societyMatch = !filters.society || candidate.society === filters.society;
+      const societyMatch =
+        !filters.society || candidate.society === filters.society;
 
       return searchMatch && branchMatch && yearMatch && societyMatch;
     });
 
-    const uniqueBranches = Array.from(new Set(candidates.map(c => c.branch))).sort();
-    const uniqueYears = Array.from(new Set(candidates.map(c => c.year))).sort();
-    const uniqueSocieties = Array.from(new Set(candidates.map(c => c.society).filter(s => s !== 'N/A'))).sort();
-    
+    const uniqueBranches = Array.from(
+      new Set(candidates.map((c) => c.branch))
+    ).sort();
+    const uniqueYears = Array.from(
+      new Set(candidates.map((c) => c.year))
+    ).sort();
+    const uniqueSocieties = Array.from(
+      new Set(candidates.map((c) => c.society).filter((s) => s !== "N/A"))
+    ).sort();
+
     return {
       filteredCandidates: filtered.slice(
         (currentPage - 1) * itemsPerPage,
@@ -57,32 +87,35 @@ export const CandidateList: React.FC<CandidateListProps> = ({
         total: candidates.length,
         filtered: filtered.length,
         branches: uniqueBranches.length,
-        societies: uniqueSocieties.length
+        societies: uniqueSocieties.length,
       },
       uniqueBranches,
       uniqueYears,
-      uniqueSocieties
+      uniqueSocieties,
     };
   }, [candidates, filters, currentPage]);
 
   const totalPages = Math.ceil(stats.filtered / itemsPerPage);
 
   // Handle filter changes
-  const handleFilterChange = (filterType: keyof FilterOptions, value: string) => {
-    setFilters(prev => ({ ...prev, [filterType]: value }));
+  const handleFilterChange = (
+    filterType: keyof FilterOptions,
+    value: string
+  ) => {
+    setFilters((prev) => ({ ...prev, [filterType]: value }));
     setCurrentPage(1); // Reset to first page when filters change
   };
 
   // Clear all filters
   const clearFilters = () => {
-    setFilters({ search: '', branch: '', year: '', society: '' });
+    setFilters({ search: "", branch: "", year: "", society: "" });
     setCurrentPage(1);
   };
 
   // Handle page navigation
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Refresh data
@@ -108,28 +141,40 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 px-6 py-4">
               <Users className="h-7 w-7 text-blue-600 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Candidates</p>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Candidates
+                </p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.total}
+                </p>
               </div>
             </CardHeader>
           </Card>
-          
+
           <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 px-6 py-4">
               <GraduationCap className="h-7 w-7 text-green-600 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Branches</p>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.branches}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Branches
+                </p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.branches}
+                </p>
               </div>
             </CardHeader>
           </Card>
-          
+
           <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 px-6 py-4">
               <Filter className="h-7 w-7 text-purple-600 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Filtered Results</p>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.filtered}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Filtered Results
+                </p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.filtered}
+                </p>
               </div>
             </CardHeader>
           </Card>
@@ -138,8 +183,12 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 px-6 py-4">
               <Users className="h-7 w-7 text-orange-600 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Societies</p>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.societies}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Societies
+                </p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.societies}
+                </p>
               </div>
             </CardHeader>
           </Card>
@@ -155,51 +204,68 @@ export const CandidateList: React.FC<CandidateListProps> = ({
                 <Input
                   placeholder="Search by name, roll number, or email..."
                   value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  onChange={(e) => handleFilterChange("search", e.target.value)}
                   className="pl-12 h-14 text-base border-2 focus:border-blue-500 transition-colors"
                 />
               </div>
-              
+
               {/* Filter Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Select value={filters.branch} onValueChange={(value) => handleFilterChange('branch', value)}>
-                  <SelectTrigger className="h-12 border-2">
+                <Select
+                  value={filters.branch}
+                  onValueChange={(value) => handleFilterChange("branch", value)}
+                >
+                  <SelectTrigger className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                     <SelectValue placeholder="Filter by branch" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">All Branches</SelectItem>
-                    {uniqueBranches.map(branch => (
-                      <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                    {uniqueBranches.map((branch) => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
-                  <SelectTrigger className="h-12 border-2">
+                <Select
+                  value={filters.year}
+                  onValueChange={(value) => handleFilterChange("year", value)}
+                >
+                  <SelectTrigger className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                     <SelectValue placeholder="Filter by year" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">All Years</SelectItem>
-                    {uniqueYears.map(year => (
-                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    {uniqueYears.map((year) => (
+                      <SelectItem key={year} value={year}>
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={filters.society} onValueChange={(value) => handleFilterChange('society', value)}>
-                  <SelectTrigger className="h-12 border-2">
+                <Select
+                  value={filters.society}
+                  onValueChange={(value) =>
+                    handleFilterChange("society", value)
+                  }
+                >
+                  <SelectTrigger className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                     <SelectValue placeholder="Filter by society" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">All Societies</SelectItem>
-                    {uniqueSocieties.map(society => (
-                      <SelectItem key={society} value={society}>{society}</SelectItem>
+                    {uniqueSocieties.map((society) => (
+                      <SelectItem key={society} value={society}>
+                        {society}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={clearFilters}
                   className="h-12 px-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
@@ -210,9 +276,14 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             </div>
 
             {/* Active Filters Display */}
-            {(filters.search || filters.branch || filters.year || filters.society) && (
+            {(filters.search ||
+              filters.branch ||
+              filters.year ||
+              filters.society) && (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Active Filters:</p>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Active Filters:
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {filters.search && (
                     <Badge variant="secondary" className="px-3 py-1.5 text-sm">
@@ -252,9 +323,9 @@ export const CandidateList: React.FC<CandidateListProps> = ({
               </p>
             )}
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleRefresh}
             className="flex items-center space-x-2"
           >
@@ -308,7 +379,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-10">
-            {filteredCandidates.map(candidate => (
+            {filteredCandidates.map((candidate) => (
               <CandidateCard
                 key={candidate._id}
                 candidate={candidate}
@@ -329,37 +400,43 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             >
               Previous
             </Button>
-            
+
             {/* Page Numbers */}
             <div className="flex flex-wrap justify-center gap-2">
-              {Array.from({ length: Math.min(totalPages, 7) }).map((_, index) => {
-                let pageNumber;
-                if (totalPages <= 7) {
-                  pageNumber = index + 1;
-                } else if (currentPage <= 4) {
-                  pageNumber = index + 1;
-                } else if (currentPage >= totalPages - 3) {
-                  pageNumber = totalPages - 6 + index;
-                } else {
-                  pageNumber = currentPage - 3 + index;
-                }
+              {Array.from({ length: Math.min(totalPages, 7) }).map(
+                (_, index) => {
+                  let pageNumber;
+                  if (totalPages <= 7) {
+                    pageNumber = index + 1;
+                  } else if (currentPage <= 4) {
+                    pageNumber = index + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNumber = totalPages - 6 + index;
+                  } else {
+                    pageNumber = currentPage - 3 + index;
+                  }
 
-                return (
-                  <Button
-                    key={pageNumber}
-                    variant={currentPage === pageNumber ? "default" : "outline"}
-                    onClick={() => handlePageChange(pageNumber)}
-                    className="px-4 py-3 min-w-[48px]"
-                  >
-                    {pageNumber}
-                  </Button>
-                );
-              })}
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={
+                        currentPage === pageNumber ? "default" : "outline"
+                      }
+                      onClick={() => handlePageChange(pageNumber)}
+                      className="px-4 py-3 min-w-[48px]"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                }
+              )}
             </div>
-            
+
             <Button
               variant="outline"
-              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                handlePageChange(Math.min(totalPages, currentPage + 1))
+              }
               disabled={currentPage === totalPages}
               className="px-6 py-3 w-full sm:w-auto"
             >
