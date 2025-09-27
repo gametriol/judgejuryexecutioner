@@ -1,87 +1,56 @@
-"use client"
-
+// src/components/ui/select.tsx
 import * as React from "react"
-import {
-  CaretSortIcon,
-  CheckIcon,
-} from "@radix-ui/react-icons"
-import * as SelectPrimitive from "@radix-ui/react-select"
 
-import { cn } from "@/lib/utils"
+// This Select implementation renders a visual trigger (from SelectTrigger)
+// and overlays a native <select> for accessibility and browser-native dropdown behavior.
+// It collects options from SelectItem children (or any descendant with a `value` prop).
+type SelectProps = {
+  value?: string;
+  onValueChange?: (v: string) => void;
+} & React.HTMLAttributes<HTMLDivElement>;
 
-const Select = SelectPrimitive.Root
+export const Select: React.FC<SelectProps> = ({ children, value, onValueChange, className, ...rest }) => {
+  // Extract visual trigger (first SelectTrigger child) and option items
+  const trigger = React.Children.toArray(children).find((c: any) => React.isValidElement(c) && c.type && (c.type as any).displayName === 'SelectTrigger');
 
-const SelectGroup = SelectPrimitive.Group
+  const items: Array<{ value: string; label: React.ReactNode }> = [];
+  function collect(node: any) {
+    if (!React.isValidElement(node)) return;
+    const props: any = (node as any).props || {};
+    if (props && props.value !== undefined) {
+      items.push({ value: String(props.value), label: props.children });
+      return;
+    }
+    React.Children.forEach(props.children, collect);
+  }
+  React.Children.forEach(children, collect);
 
-const SelectValue = SelectPrimitive.Value
+  return (
+    <div className={className} {...rest} style={{ position: 'relative', display: 'inline-block' }}>
+      <div aria-hidden>{trigger ? (trigger as any).props.children : null}</div>
 
-const SelectTrigger = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-      className
-    )}
-    {...props}
-  >
-    {children}
-    <CaretSortIcon className="h-4 w-4 opacity-50" />
-  </SelectPrimitive.Trigger>
-))
-SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
-
-const SelectContent = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      className={cn(
-        "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-80",
-        className
-      )}
-      {...props}
-    >
-      <SelectPrimitive.Viewport className="p-1">
-        {children}
-      </SelectPrimitive.Viewport>
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-))
-SelectContent.displayName = SelectPrimitive.Content.displayName
-
-const SelectItem = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <CheckIcon className="h-4 w-4" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
-
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-))
-SelectItem.displayName = SelectPrimitive.Item.displayName
-
-export {
-  Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
+      <select
+        value={value}
+        onChange={(e) => onValueChange && onValueChange(e.target.value)}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+        aria-hidden={false}
+      >
+        {items.map(i => (
+          <option key={i.value} value={i.value}>{i.label}</option>
+        ))}
+      </select>
+    </div>
+  );
 }
+
+export const SelectTrigger: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, ...props }) => {
+  const Comp: any = (p: any) => <div {...p}>{children}</div>;
+  Comp.displayName = 'SelectTrigger';
+  return <div {...props}>{children}</div>;
+}
+
+export const SelectValue: React.FC<React.HTMLAttributes<HTMLSpanElement>> = ({ children, ...props }) => <span {...props}>{children}</span>
+
+export const SelectContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, ...props }) => <div {...props}>{children}</div>
+
+export const SelectItem: React.FC<React.HTMLAttributes<HTMLDivElement> & { value: string }> = ({ children, ...props }) => <div {...props}>{children}</div>
