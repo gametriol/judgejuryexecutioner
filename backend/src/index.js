@@ -99,8 +99,8 @@ app.get(['/healthz', '/health'], (req, res) => {
 // Returns array sorted by points desc: { rollNo, points, name, branch, imageUrl, ... }
 app.get('/api/points/all-with-details', async (req, res) => {
   try {
-    const filePath = path.resolve(__dirname, '../../test.applications.json');
-    const apps = require(filePath);
+    // const filePath = path.resolve(__dirname, '../../test.applications.json');
+    const apps = require('./test.applications.json');
     const docs = await Score.find({}).lean();
     const scoreMap = new Map(docs.map(d => [d.rollNo, d.points]));
 
