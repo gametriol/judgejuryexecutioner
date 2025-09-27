@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-	readonly VITE_API_BASE?: 'http://localhost:4000';
+	readonly VITE_API_BASE?: 'https://judgejuryexecutioner.onrender.com';
 	// add other VITE_ env vars here as needed
 }
 
