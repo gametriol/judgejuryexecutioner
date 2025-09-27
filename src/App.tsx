@@ -11,6 +11,17 @@ const configuredBase = (import.meta as any).env?.VITE_API_BASE ?? '';
 const API_BASE = configuredBase && configuredBase.trim()
   ? configuredBase.replace(/\/$/, '')
   : (import.meta.env.DEV ? 'http://localhost:4000' : '');
+
+// If running in production (non-dev) and VITE_API_BASE was not set at build time,
+// show a clear console error and a small banner in the UI so it's obvious the
+// frontend wasn't configured to talk to the backend on Vercel/Netlify/etc.
+const PROD_API_MISSING = !API_BASE && !(import.meta as any).env?.DEV;
+if (PROD_API_MISSING) {
+  // eslint-disable-next-line no-console
+  console.error(
+    'VITE_API_BASE is not set. In production you must set VITE_API_BASE to your backend URL (e.g. https://your-backend.onrender.com) in your Vercel/Netlify project settings and redeploy.'
+  );
+}
 import { Button } from '@/components/ui/button';
 import Leaderboards from '@/components/Leaderboards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,6 +162,13 @@ const App: React.FC = () => {
     <ToastProvider>
       <div className={`min-h-screen transition-colors duration-300 ${state.darkMode ? 'dark' : ''}`}>
         <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+            {PROD_API_MISSING && (
+              <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-800">
+                <div className="max-w-7xl mx-auto px-6 py-3">
+                  Frontend is missing <code>VITE_API_BASE</code>. Set <strong>VITE_API_BASE</strong> in your Vercel project to the backend URL (e.g. <em>https://your-backend.onrender.com</em>) and redeploy.
+                </div>
+              </div>
+            )}
           {/* Header Navigation */}
           <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-6 py-4">
