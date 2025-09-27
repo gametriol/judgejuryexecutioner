@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 type CandidateItem = {
   rollNo: string;
   points: number;
+  raters?: string[];
   name?: string | null;
   branch?: string | null;
   imageUrl?: string | null;
@@ -156,8 +157,21 @@ export default function Leaderboards() {
                   </div>
                 </div>
 
-                <div className="font-bold text-blue-600 text-lg">
-                  {c.points ?? 0} pts
+                <div className="text-right">
+                  {Array.isArray(c.raters) && c.raters.length > 0 ? (
+                    <>
+                      {
+                        /* average rounded to 2 decimals, show 'avg X points' */
+                      }
+                      <div className="font-bold text-blue-600 text-lg">avg {(Number(c.points || 0) / c.raters.length).toFixed(2)} points</div>
+                      <div className="text-sm text-gray-500">{c.raters.length} reviews · total {Number(c.points || 0)} pts</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="font-bold text-gray-400 text-lg">—</div>
+                      <div className="text-sm text-gray-500">0 reviews · total 0 pts</div>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
