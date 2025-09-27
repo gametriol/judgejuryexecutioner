@@ -313,9 +313,14 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                         const rater = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } })();
                         if (rater) payload.rater = rater;
 
-                        const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? 'http://localhost:4000';
+                        const configuredBase = (import.meta as any).env?.VITE_API_BASE ?? '';
+                        const API_BASE = configuredBase && configuredBase.trim()
+                          ? configuredBase.replace(/\/$/, '')
+                          : '';
 
-                        const res = await fetch(`${API_BASE}/api/scores/add`, {
+                        const url = API_BASE ? `${API_BASE}/api/scores/add` : '/api/scores/add';
+
+                        const res = await fetch(url, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(payload),

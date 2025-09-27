@@ -26,7 +26,11 @@ export default function Leaderboards() {
       setLoading(true);
       setError(null);
       const path = "/api/scores/all-with-details";
-      const base = (import.meta as any).env?.VITE_BACKEND_URL ?? "";
+      // Use the same env key as the rest of the app. Prefer VITE_API_BASE when set.
+      const configuredBase = (import.meta as any).env?.VITE_API_BASE ?? '';
+      const API_BASE = configuredBase && configuredBase.trim()
+        ? configuredBase.replace(/\/$/, '')
+        : (import.meta.env.DEV ? 'http://localhost:4000' : '');
 
       async function tryFetch(url: string) {
         const r = await fetch(url);
@@ -53,18 +57,21 @@ export default function Leaderboards() {
       }
 
       try {
+        const url = API_BASE ? API_BASE + path : path;
         let json;
         try {
-          json = await tryFetch(path);
-        } catch (err1) {
-          if (base && base.trim()) {
+          json = await tryFetch(url);
+        } catch (errApi) {
+          // If a configured API_BASE existed and failed, or if the origin doesn't have the backend,
+          // try the relative path as a last resort.
+          if (API_BASE) {
             try {
-              json = await tryFetch(base.replace(/\/$/, "") + path);
-            } catch (err2) {
-              throw err2;
+              json = await tryFetch(path);
+            } catch (errRel) {
+              throw errApi || errRel;
             }
           } else {
-            throw err1;
+            throw errApi;
           }
         }
 

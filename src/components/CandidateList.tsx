@@ -1,5 +1,5 @@
 // src/components/CandidateList.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -32,6 +32,15 @@ export const CandidateList: React.FC<CandidateListProps> = ({
   candidates,
   loading = false,
 }) => {
+  const searchDebounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
     null
   );
@@ -198,71 +207,104 @@ export const CandidateList: React.FC<CandidateListProps> = ({
         <Card className="mb-8 shadow-sm hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="space-y-6">
-              {/* Search Bar */}
+              {/* Search Bar (accessible, debounced) */}
               <div className="relative">
+                <label htmlFor="candidate-search" className="sr-only">
+                  Search candidates
+                </label>
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
+                <input
+                  id="candidate-search"
+                  type="search"
+                  aria-label="Search candidates by name, roll number or email"
                   placeholder="Search by name, roll number, or email..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange("search", e.target.value)}
-                  className="pl-12 h-14 text-base border-2 focus:border-blue-500 transition-colors"
+                  defaultValue={filters.search}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // debounce user input for 250ms
+                    if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+                    searchDebounceRef.current = window.setTimeout(() => {
+                      handleFilterChange("search", v);
+                    }, 250);
+                  }}
+                  className="pl-12 h-14 text-base border-2 focus:border-blue-500 transition-colors w-full rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
+                {/* Clear button */}
+                {filters.search && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => {
+                      if (searchDebounceRef.current) window.clearTimeout(searchDebounceRef.current);
+                      handleFilterChange("search", "");
+                      // also clear the input value in DOM
+                      const el = document.getElementById("candidate-search") as HTMLInputElement | null;
+                      if (el) el.value = "";
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* live region for screen-readers announcing count changes */}
+              <div aria-live="polite" className="sr-only">
+                {stats.filtered} candidates match your filters
               </div>
 
               {/* Filter Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Select
-                  value={filters.branch}
-                  onValueChange={(value) => handleFilterChange("branch", value)}
-                >
-                  <SelectTrigger className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                    <SelectValue placeholder="Filter by branch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Branches</SelectItem>
+                <div>
+                  <label htmlFor="filter-branch" className="sr-only">Filter by branch</label>
+                  <select
+                    id="filter-branch"
+                    value={filters.branch}
+                    onChange={(e) => handleFilterChange("branch", e.target.value)}
+                    className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 w-full px-3"
+                  >
+                    <option value="">All Branches</option>
                     {uniqueBranches.map((branch) => (
-                      <SelectItem key={branch} value={branch}>
+                      <option key={branch} value={branch}>
                         {branch}
-                      </SelectItem>
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                </div>
 
-                <Select
-                  value={filters.year}
-                  onValueChange={(value) => handleFilterChange("year", value)}
-                >
-                  <SelectTrigger className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                    <SelectValue placeholder="Filter by year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Years</SelectItem>
+                <div>
+                  <label htmlFor="filter-year" className="sr-only">Filter by year</label>
+                  <select
+                    id="filter-year"
+                    value={filters.year}
+                    onChange={(e) => handleFilterChange("year", e.target.value)}
+                    className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 w-full px-3"
+                  >
+                    <option value="">All Years</option>
                     {uniqueYears.map((year) => (
-                      <SelectItem key={year} value={year}>
+                      <option key={year} value={year}>
                         {year}
-                      </SelectItem>
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                </div>
 
-                <Select
-                  value={filters.society}
-                  onValueChange={(value) =>
-                    handleFilterChange("society", value)
-                  }
-                >
-                  <SelectTrigger className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                    <SelectValue placeholder="Filter by society" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Societies</SelectItem>
+                <div>
+                  <label htmlFor="filter-society" className="sr-only">Filter by society</label>
+                  <select
+                    id="filter-society"
+                    value={filters.society}
+                    onChange={(e) => handleFilterChange("society", e.target.value)}
+                    className="h-12 border-2 border-gray-300 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 w-full px-3"
+                  >
+                    <option value="">All Societies</option>
                     {uniqueSocieties.map((society) => (
-                      <SelectItem key={society} value={society}>
+                      <option key={society} value={society}>
                         {society}
-                      </SelectItem>
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                </div>
 
                 <Button
                   variant="outline"

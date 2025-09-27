@@ -4,8 +4,13 @@ import { CandidateList } from '@/components/CandidateList';
 import { Candidate } from '@/types/candidate';
 import { Moon, Sun, Users, Database, Settings } from 'lucide-react';
 // Fetch applications from backend instead of bundling local JSON.
-// Backend base URL can be configured with Vite env var VITE_API_BASE
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:4000';
+// Backend base URL can be configured with Vite env var VITE_API_BASE.
+// If VITE_API_BASE is not set, prefer relative /api paths in production. Only
+// fall back to localhost during development for convenience.
+const configuredBase = (import.meta as any).env?.VITE_API_BASE ?? '';
+const API_BASE = configuredBase && configuredBase.trim()
+  ? configuredBase.replace(/\/$/, '')
+  : (import.meta.env.DEV ? 'http://localhost:4000' : '');
 import { Button } from '@/components/ui/button';
 import Leaderboards from '@/components/Leaderboards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
