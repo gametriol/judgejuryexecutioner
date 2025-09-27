@@ -6,8 +6,6 @@ import {
   MapPin, 
   Github, 
   ExternalLink,
-  CheckCircle,
-  XCircle,
   Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,9 +42,7 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
     }));
   };
 
-  const handleStatusChange = (status: 'approved' | 'rejected') => {
-    setScores(prev => ({ ...prev, status }));
-  };
+  // removed status/comments UI per new requirement
 
   const parseGithubLinks = (githubProfile: string) => {
     if (!githubProfile) return [];
@@ -281,38 +277,54 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                   </div>
                 </div>
 
-                {/* Comments */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Comments</label>
-                  <Textarea
-                    placeholder="Add your feedback and comments..."
-                    value={scores.comments}
-                    onChange={(e) => handleScoreChange('comments', e.target.value)}
-                    rows={4}
-                  />
-                </div>
-
-                {/* Action Buttons */}
+                {/* Action Buttons: Update will compute sum and send to backend */}
                 <div className="space-y-3">
                   <Button
                     className="w-full"
-                    variant={scores.status === 'approved' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange('approved')}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve Candidate
-                  </Button>
+                    variant="secondary"
+                    onClick={async () => {
+                      // compute sum of the numeric fields
+                      const sum = Number(scores.technicalSkills || 0) + Number(scores.communication || 0) + Number(scores.leadershipPotential || 0) + Number(scores.overallRating || 0);
+                      const payload = { rollNo: candidate.rollNo, points: sum };
+                      try {
+                        // try a range of common backend ports in case the server picked a different one
+                        let success = false;
+                        let lastErr = null;
+                        let resultJson = null;
+                        for (let p = 4000; p <= 4005 && !success; p++) {
+                          try {
+                            const url = `http://localhost:${p}/api/points/add`;
+                            const res = await fetch(url, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(payload)
+                            });
+                            if (!res.ok) {
+                              const txt = await res.text();
+                              lastErr = `Port ${p} responded ${res.status}: ${txt}`;
+                              continue;
+                            }
+                            resultJson = await res.json();
+                            success = true;
+                          } catch (e) {
+                            lastErr = e;
+                            // try next port
+                          }
+                        }
 
-                  <Button
-                    className="w-full"
-                    variant={scores.status === 'rejected' ? 'destructive' : 'outline'}
-                    onClick={() => handleStatusChange('rejected')}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject Candidate
-                  </Button>
+                        if (!resultJson) {
+                          console.error('Failed to add points', lastErr);
+                          window.alert('Failed to add points: ' + String(lastErr));
+                          return;
+                        }
 
-                  <Button className="w-full" variant="secondary">
+                        window.alert(`Added ${sum} points to ${resultJson.rollNo}. New total: ${resultJson.points}`);
+                      } catch (err) {
+                        console.error(err);
+                        window.alert('Error sending points to backend');
+                      }
+                    }}
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     Update Scores
                   </Button>

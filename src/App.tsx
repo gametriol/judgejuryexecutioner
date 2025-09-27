@@ -3,75 +3,15 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { CandidateList } from '@/components/CandidateList';
 import { Candidate } from '@/types/candidate';
 import { Moon, Sun, Users, Database, Settings } from 'lucide-react';
+import rawApplications from '../test.applications.json';
 import { Button } from '@/components/ui/button';
+import Leaderboards from '@/components/Leaderboards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ToastProvider } from '@/components/ui/toaster';
 import './App.css';
 
-// Mock data - replace with your MongoDB API calls
-const mockCandidates: Candidate[] = [
-  {
-    "_id": "68d6c4750b6303e94807dbc5",
-    "name": "Devansh Kumar Yadav",
-    "rollNo": "2024021325",
-    "branch": "CSE",
-    "year": "2nd Year",
-    "phone": "8542969484",
-    "email": "dkyadav020806@gmail.com",
-    "society": "N/A",
-    "whyJoin": "After joining Flux I aim to enhance my programming skills under guidance of experienced seniors and contribute to innovative projects that can make a real impact in the tech community.",
-    "softSkills": ["Communication", "Teamwork", "Problem Solving", "Leadership", "Adaptability"],
-    "hardSkills": ["Python", "Machine Learning", "Data Structures", "Algorithms"],
-    "projectLink": "https://github.com/devansh/ml-project",
-    "imageUrl": "https://res.cloudinary.com/dykj0kqay/image/upload/v1758905459/bvqquwvq.jpg",
-    "githubProfile": "https://github.com/devansh-yadav, https://leetcode.com/u/zDp9abLRtJ/, https://www.codechef.com/users/devansh",
-    "residence": "Gorakhpur, Uttar Pradesh",
-    "createdAt": "2025-09-26T16:51:01.074+00:00",
-    "updatedAt": "2025-09-26T16:51:01.074+00:00",
-    "__v": 0
-  },
-  {
-    "_id": "68d6c4750b6303e94807dbc6",
-    "name": "Priya Sharma",
-    "rollNo": "2024021326",
-    "branch": "ECE",
-    "year": "3rd Year",
-    "phone": "9876543210",
-    "email": "priya.sharma@example.com",
-    "society": "Tech Club",
-    "whyJoin": "I want to join Flux to work on cutting-edge technology projects and collaborate with like-minded individuals who are passionate about innovation.",
-    "softSkills": ["Leadership", "Public Speaking", "Creative Thinking", "Time Management"],
-    "hardSkills": ["JavaScript", "React", "Node.js", "MongoDB"],
-    "projectLink": "https://github.com/priya/web-app",
-    "imageUrl": "https://res.cloudinary.com/dykj0kqay/image/upload/v1758905459/priya.jpg",
-    "githubProfile": "https://github.com/priya-sharma, https://leetcode.com/u/priya123/",
-    "residence": "Delhi, India",
-    "createdAt": "2025-09-26T17:15:01.074+00:00",
-    "updatedAt": "2025-09-26T17:15:01.074+00:00",
-    "__v": 0
-  },
-  {
-    "_id": "68d6c4750b6303e94807dbc7",
-    "name": "Arjun Patel",
-    "rollNo": "2024021327",
-    "branch": "CSE",
-    "year": "1st Year",
-    "phone": "7890123456",
-    "email": "arjun.patel@example.com",
-    "society": "Coding Club",
-    "whyJoin": "Flux represents the perfect opportunity to apply theoretical knowledge in real-world scenarios while learning from industry experts.",
-    "softSkills": ["Analytical Thinking", "Collaboration", "Attention to Detail", "Adaptability"],
-    "hardSkills": ["C++", "Python", "Data Analysis", "Statistics"],
-    "projectLink": "",
-    "imageUrl": "https://res.cloudinary.com/dykj0kqay/image/upload/v1758905459/arjun.jpg",
-    "githubProfile": "https://github.com/arjun-patel, https://www.codechef.com/users/arjun_codes",
-    "residence": "Mumbai, Maharashtra",
-    "createdAt": "2025-09-26T18:30:01.074+00:00",
-    "updatedAt": "2025-09-26T18:30:01.074+00:00",
-    "__v": 0
-  }
-];
+// NOTE: we'll use the provided `test.applications.json` dataset (rawApplications)
 
 interface AppState {
   candidates: Candidate[];
@@ -81,42 +21,54 @@ interface AppState {
 }
 
 const App: React.FC = () => {
+  // Normalize raw Mongo export (handles {$oid} and {$date} formats)
+  const normalizeApplication = (a: any): Candidate => {
+    const id = a._id?.$oid ?? a._id ?? a.id ?? String(Math.random());
+    const createdAt = a.createdAt?.$date ?? a.createdAt ?? '';
+    const updatedAt = a.updatedAt?.$date ?? a.updatedAt ?? '';
+
+    const societyRaw = (a.society ?? a.soc ?? '').toString().trim();
+    const society = (!societyRaw || /^(na|n\/a|none|no society yet|na\*?)$/i.test(societyRaw)) ? 'N/A' : societyRaw;
+
+    const softSkills = Array.isArray(a.softSkills) ? a.softSkills : (a.softSkills ? String(a.softSkills).split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean) : []);
+    const hardSkills = Array.isArray(a.hardSkills) ? a.hardSkills : (a.hardSkills ? String(a.hardSkills).split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean) : []);
+
+    return {
+      _id: id,
+      name: a.name ?? '',
+      rollNo: a.rollNo ?? '',
+      branch: a.branch ?? '',
+      year: a.year ?? '',
+      phone: a.phone ?? '',
+      email: a.email ?? '',
+      society,
+      whyJoin: a.whyJoin ?? '',
+      softSkills,
+      hardSkills,
+      projectLink: a.projectLink ?? '',
+      imageUrl: a.imageUrl ?? '',
+      githubProfile: a.githubProfile ?? '',
+      residence: a.residence ?? '',
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      __v: typeof a.__v === 'number' ? a.__v : 0
+    };
+  };
+
+  // Immediately load normalized dataset from the provided test export
+  const initialCandidates: Candidate[] = Array.isArray(rawApplications) ? rawApplications.map((r: any) => normalizeApplication(r)) : [];
+  console.log('Loaded applications from test.applications.json:', initialCandidates.length);
+
   const [state, setState] = useState<AppState>({
-    candidates: [],
-    loading: true,
+    candidates: initialCandidates,
+    loading: false,
     error: null,
     darkMode: false
   });
 
-  // Simulate data fetching from MongoDB
-  useEffect(() => {
-    const fetchCandidates = async (): Promise<void> => {
-      try {
-        setState(prev => ({ ...prev, loading: true, error: null }));
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setState(prev => ({
-          ...prev,
-          candidates: mockCandidates,
-          loading: false
-        }));
-      } catch (error) {
-        setState(prev => ({
-          ...prev,
-          error: error instanceof Error ? error.message : 'Failed to fetch candidates',
-          loading: false
-        }));
-      }
-    };
-
-    fetchCandidates();
-  }, []);
-
   // Dark mode toggle
   const toggleDarkMode = (): void => {
-    setState(prev => ({ ...prev, darkMode: !prev.darkMode }));
+    setState((prev: AppState) => ({ ...prev, darkMode: !prev.darkMode }));
     document.documentElement.classList.toggle('dark');
   };
 
@@ -124,9 +76,9 @@ const App: React.FC = () => {
   const stats = React.useMemo(() => {
     return {
       totalCandidates: state.candidates.length,
-      branches: new Set(state.candidates.map(c => c.branch)).size,
-      years: new Set(state.candidates.map(c => c.year)).size,
-      withSociety: state.candidates.filter(c => c.society !== 'N/A').length
+  branches: new Set(state.candidates.map((c: Candidate) => c.branch)).size,
+  years: new Set(state.candidates.map((c: Candidate) => c.year)).size,
+  withSociety: state.candidates.filter((c: Candidate) => c.society !== 'N/A').length
     };
   }, [state.candidates]);
 
@@ -180,10 +132,7 @@ const App: React.FC = () => {
 
           {/* Main Content */}
           <main className="flex-1">
-            <CandidateList 
-              candidates={state.candidates} 
-              loading={state.loading}
-            />
+            <MainView candidates={state.candidates} loading={state.loading} />
           </main>
         </div>
       </div>
@@ -192,3 +141,25 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+// Small wrapper to toggle between CandidateList and Leaderboards from the header
+function MainView({ candidates, loading }: { candidates: Candidate[]; loading: boolean }) {
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  return (
+    <div>
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-end">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => setShowLeaderboard(false)}>Candidates</Button>
+          <Button variant="outline" size="sm" onClick={() => setShowLeaderboard(true)}>Leaderboards</Button>
+        </div>
+      </div>
+
+      {showLeaderboard ? (
+        <Leaderboards />
+      ) : (
+        <CandidateList candidates={candidates} loading={loading} />
+      )}
+    </div>
+  );
+}

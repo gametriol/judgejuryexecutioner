@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CandidateCard } from './CandidateCard';
 import { CandidateDetail } from './CandidateDetail';
 import { Candidate, FilterOptions } from '@/types/candidate';
@@ -159,40 +160,43 @@ export const CandidateList: React.FC<CandidateListProps> = ({
                 />
               </div>
               
-              {/* Filter Row - Updated with HTML selects */}
+              {/* Filter Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <select
-                  value={filters.branch}
-                  onChange={(e) => handleFilterChange('branch', e.target.value)}
-                  className="h-12 w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">All Branches</option>
-                  {uniqueBranches.map(branch => (
-                    <option key={branch} value={branch}>{branch}</option>
-                  ))}
-                </select>
+                <Select value={filters.branch} onValueChange={(value) => handleFilterChange('branch', value)}>
+                  <SelectTrigger className="h-12 border-2">
+                    <SelectValue placeholder="Filter by branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Branches</SelectItem>
+                    {uniqueBranches.map(branch => (
+                      <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                <select
-                  value={filters.year}
-                  onChange={(e) => handleFilterChange('year', e.target.value)}
-                  className="h-12 w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">All Years</option>
-                  {uniqueYears.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
+                <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
+                  <SelectTrigger className="h-12 border-2">
+                    <SelectValue placeholder="Filter by year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Years</SelectItem>
+                    {uniqueYears.map(year => (
+                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                <select
-                  value={filters.society}
-                  onChange={(e) => handleFilterChange('society', e.target.value)}
-                  className="h-12 w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">All Societies</option>
-                  {uniqueSocieties.map(society => (
-                    <option key={society} value={society}>{society}</option>
-                  ))}
-                </select>
+                <Select value={filters.society} onValueChange={(value) => handleFilterChange('society', value)}>
+                  <SelectTrigger className="h-12 border-2">
+                    <SelectValue placeholder="Filter by society" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Societies</SelectItem>
+                    {uniqueSocieties.map(society => (
+                      <SelectItem key={society} value={society}>{society}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 <Button 
                   variant="outline" 
