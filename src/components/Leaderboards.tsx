@@ -25,7 +25,7 @@ export default function Leaderboards() {
     async function fetchData() {
       setLoading(true);
       setError(null);
-      const path = "/api/points/all-with-details";
+      const path = "/api/scores/all-with-details";
       const base = (import.meta as any).env?.VITE_BACKEND_URL ?? "";
 
       async function tryFetch(url: string) {

@@ -1,44 +1,47 @@
-import React, { useState } from 'react';
-import { 
-  ArrowLeft, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Github, 
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  Github,
   ExternalLink,
-  Save
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Candidate, CandidateScore } from '@/types/candidate';
+  Save,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Candidate, CandidateScore } from "@/types/candidate";
 
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
 }
 
-export const CandidateDetail: React.FC<CandidateDetailProps> = ({ 
-  candidate, 
-  onBack 
+export const CandidateDetail: React.FC<CandidateDetailProps> = ({
+  candidate,
+  onBack,
 }) => {
   const [scores, setScores] = useState<CandidateScore>({
     technicalSkills: 5,
     communication: 5,
     leadershipPotential: 5,
     overallRating: 5,
-    comments: '',
-    status: 'pending'
+    comments: "",
+    status: "pending",
   });
 
-  const handleScoreChange = (field: keyof CandidateScore, value: number[] | string) => {
-    setScores(prev => ({
+  const handleScoreChange = (
+    field: keyof CandidateScore,
+    value: number[] | string
+  ) => {
+    setScores((prev) => ({
       ...prev,
-      [field]: Array.isArray(value) ? value[0] : value
+      [field]: Array.isArray(value) ? value[0] : value,
     }));
   };
 
@@ -46,17 +49,17 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
 
   const parseGithubLinks = (githubProfile: string) => {
     if (!githubProfile) return [];
-    
-    return githubProfile.split(',').map(link => {
+
+    return githubProfile.split(",").map((link) => {
       const trimmed = link.trim();
-      if (trimmed.includes('github.com')) {
-        return { type: 'github', url: trimmed, icon: Github };
-      } else if (trimmed.includes('leetcode.com')) {
-        return { type: 'leetcode', url: trimmed, icon: ExternalLink };
-      } else if (trimmed.includes('codechef.com')) {
-        return { type: 'codechef', url: trimmed, icon: ExternalLink };
+      if (trimmed.includes("github.com")) {
+        return { type: "github", url: trimmed, icon: Github };
+      } else if (trimmed.includes("leetcode.com")) {
+        return { type: "leetcode", url: trimmed, icon: ExternalLink };
+      } else if (trimmed.includes("codechef.com")) {
+        return { type: "codechef", url: trimmed, icon: ExternalLink };
       }
-      return { type: 'external', url: trimmed, icon: ExternalLink };
+      return { type: "external", url: trimmed, icon: ExternalLink };
     });
   };
 
@@ -81,18 +84,23 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
               <CardHeader>
                 <div className="flex items-start space-x-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={candidate.imageUrl} alt={candidate.name} />
+                    <AvatarImage
+                      src={candidate.imageUrl}
+                      alt={candidate.name}
+                    />
                     <AvatarFallback className="text-2xl">
                       {candidate.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold">{candidate.name}</h2>
-                    <p className="text-gray-600 dark:text-gray-400">{candidate.rollNo}</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {candidate.rollNo}
+                    </p>
                     <div className="flex space-x-2 mt-2">
                       <Badge variant="secondary">{candidate.branch}</Badge>
                       <Badge variant="outline">{candidate.year}</Badge>
-                      {candidate.society !== 'N/A' && (
+                      {candidate.society !== "N/A" && (
                         <Badge>{candidate.society}</Badge>
                       )}
                     </div>
@@ -129,9 +137,9 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                     ))}
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div>
                   <h4 className="font-semibold mb-2">Hard Skills</h4>
                   <div className="flex flex-wrap gap-2">
@@ -169,7 +177,7 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                       </a>
                     );
                   })}
-                  
+
                   {candidate.projectLink && (
                     <a
                       href={candidate.projectLink}
@@ -226,7 +234,9 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                     </label>
                     <Slider
                       value={[scores.technicalSkills]}
-                      onValueChange={(value) => handleScoreChange('technicalSkills', value)}
+                      onValueChange={(value) =>
+                        handleScoreChange("technicalSkills", value)
+                      }
                       max={10}
                       min={1}
                       step={1}
@@ -240,7 +250,9 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                     </label>
                     <Slider
                       value={[scores.communication]}
-                      onValueChange={(value) => handleScoreChange('communication', value)}
+                      onValueChange={(value) =>
+                        handleScoreChange("communication", value)
+                      }
                       max={10}
                       min={1}
                       step={1}
@@ -254,7 +266,9 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                     </label>
                     <Slider
                       value={[scores.leadershipPotential]}
-                      onValueChange={(value) => handleScoreChange('leadershipPotential', value)}
+                      onValueChange={(value) =>
+                        handleScoreChange("leadershipPotential", value)
+                      }
                       max={10}
                       min={1}
                       step={1}
@@ -268,7 +282,9 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                     </label>
                     <Slider
                       value={[scores.overallRating]}
-                      onValueChange={(value) => handleScoreChange('overallRating', value)}
+                      onValueChange={(value) =>
+                        handleScoreChange("overallRating", value)
+                      }
                       max={10}
                       min={1}
                       step={1}
@@ -284,44 +300,44 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                     variant="secondary"
                     onClick={async () => {
                       // compute sum of the numeric fields
-                      const sum = Number(scores.technicalSkills || 0) + Number(scores.communication || 0) + Number(scores.leadershipPotential || 0) + Number(scores.overallRating || 0);
-                      const payload = { rollNo: candidate.rollNo, points: sum };
-                      try {
-                        // try a range of common backend ports in case the server picked a different one
-                        let success = false;
-                        let lastErr = null;
-                        let resultJson = null;
-                        for (let p = 4000; p <= 4005 && !success; p++) {
-                          try {
-                            const url = `http://localhost:${p}/api/points/add`;
-                            const res = await fetch(url, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify(payload)
-                            });
-                            if (!res.ok) {
-                              const txt = await res.text();
-                              lastErr = `Port ${p} responded ${res.status}: ${txt}`;
-                              continue;
-                            }
-                            resultJson = await res.json();
-                            success = true;
-                          } catch (e) {
-                            lastErr = e;
-                            // try next port
-                          }
-                        }
+                      const sum =
+                        Number(scores.technicalSkills || 0) +
+                        Number(scores.communication || 0) +
+                        Number(scores.leadershipPotential || 0) +
+                        Number(scores.overallRating || 0);
 
-                        if (!resultJson) {
-                          console.error('Failed to add points', lastErr);
-                          window.alert('Failed to add points: ' + String(lastErr));
+                      const payload = { rollNo: candidate.rollNo, points: sum };
+
+                      try {
+                        const url = `https://judgejuryexecutioner.onrender.com/api/scores/add`;
+
+                        const res = await fetch(url, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(payload),
+                        });
+
+                        if (!res.ok) {
+                          const txt = await res.text();
+                          console.error(
+                            "Failed to add points",
+                            res.status,
+                            txt
+                          );
+                          window.alert(
+                            `Failed to add points: ${res.status} ${txt}`
+                          );
                           return;
                         }
 
-                        window.alert(`Added ${sum} points to ${resultJson.rollNo}. New total: ${resultJson.points}`);
+                        const resultJson = await res.json();
+
+                        window.alert(
+                          `Added ${sum} points to ${resultJson.rollNo}. New total: ${resultJson.points}`
+                        );
                       } catch (err) {
                         console.error(err);
-                        window.alert('Error sending points to backend');
+                        window.alert("Error sending points to backend");
                       }
                     }}
                   >
@@ -331,14 +347,17 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                 </div>
 
                 {/* Status Display */}
-                {scores.status !== 'pending' && (
-                  <div className={`p-3 rounded-lg text-center ${
-                    scores.status === 'approved' 
-                      ? 'bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300' 
-                      : 'bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300'
-                  }`}>
+                {scores.status !== "pending" && (
+                  <div
+                    className={`p-3 rounded-lg text-center ${
+                      scores.status === "approved"
+                        ? "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300"
+                        : "bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300"
+                    }`}
+                  >
                     <p className="font-medium">
-                      Candidate {scores.status === 'approved' ? 'Approved' : 'Rejected'}
+                      Candidate{" "}
+                      {scores.status === "approved" ? "Approved" : "Rejected"}
                     </p>
                   </div>
                 )}

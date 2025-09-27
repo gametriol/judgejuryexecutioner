@@ -15,7 +15,8 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/flux';
 const PORT = process.env.PORT || 4000;
 
 // Connect Mongo
-mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error', err));
 
@@ -26,8 +27,10 @@ app.get(['/api/health', '/healthz', '/health'], (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Get points by rollNo
-app.get('/api/points/roll/:rollNo', async (req, res) => {
+// ✅ Scores API
+
+// Get score by rollNo
+app.get('/api/scores/roll/:rollNo', async (req, res) => {
   try {
     const doc = await Score.findOne({ rollNo: req.params.rollNo });
     if (!doc) return res.status(404).json({ message: 'Not found' });
@@ -38,11 +41,13 @@ app.get('/api/points/roll/:rollNo', async (req, res) => {
   }
 });
 
-// Add points
-app.post('/api/points/add', async (req, res) => {
+// Add score
+app.post('/api/scores/add', async (req, res) => {
   const { rollNo, points } = req.body;
   if (!rollNo || typeof points !== 'number') {
-    return res.status(400).json({ message: 'rollNo and numeric points required' });
+    return res
+      .status(400)
+      .json({ message: 'rollNo and numeric points required' });
   }
 
   try {
@@ -59,7 +64,7 @@ app.post('/api/points/add', async (req, res) => {
 });
 
 // Seed from local JSON
-app.post('/api/seed/from-applications', async (req, res) => {
+app.post('/api/scores/seed/from-applications', async (req, res) => {
   try {
     const data = require('./test.applications.json');
     const rollNos = data.map(a => a.rollNo).filter(Boolean);
@@ -68,8 +73,8 @@ app.post('/api/seed/from-applications', async (req, res) => {
       updateOne: {
         filter: { rollNo: r },
         update: { $setOnInsert: { rollNo: r, points: 0 } },
-        upsert: true
-      }
+        upsert: true,
+      },
     }));
 
     if (ops.length) await Score.bulkWrite(ops);
@@ -81,10 +86,13 @@ app.post('/api/seed/from-applications', async (req, res) => {
 });
 
 // Leaderboard endpoints
-app.get('/api/points/top', async (req, res) => {
+app.get('/api/scores/top', async (req, res) => {
   const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
   try {
-    const docs = await Score.find({}).sort({ points: -1 }).limit(limit).lean();
+    const docs = await Score.find({})
+      .sort({ points: -1 })
+      .limit(limit)
+      .lean();
     res.json(docs.map(d => ({ rollNo: d.rollNo, points: d.points })));
   } catch (err) {
     console.error(err);
@@ -92,7 +100,7 @@ app.get('/api/points/top', async (req, res) => {
   }
 });
 
-app.get('/api/points/all', async (req, res) => {
+app.get('/api/scores/all', async (req, res) => {
   try {
     const docs = await Score.find({}).sort({ points: -1 }).lean();
     res.json(docs.map(d => ({ rollNo: d.rollNo, points: d.points })));
@@ -102,7 +110,7 @@ app.get('/api/points/all', async (req, res) => {
   }
 });
 
-app.get('/api/points/all-with-details', async (req, res) => {
+app.get('/api/scores/all-with-details', async (req, res) => {
   try {
     const apps = require('./test.applications.json');
     const docs = await Score.find({}).lean();
@@ -114,7 +122,7 @@ app.get('/api/points/all-with-details', async (req, res) => {
       name: a.name || null,
       branch: a.branch || null,
       imageUrl: a.imageUrl || null,
-      application: a
+      application: a,
     }));
 
     merged.sort((x, y) => (y.points || 0) - (x.points || 0));
@@ -125,16 +133,29 @@ app.get('/api/points/all-with-details', async (req, res) => {
   }
 });
 
-app.get('/api/points', async (req, res) => {
+app.get('/api/scores', async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-  const limit = Math.max(1, Math.min(1000, parseInt(req.query.limit, 10) || 100));
+  const limit = Math.max(
+    1,
+    Math.min(1000, parseInt(req.query.limit, 10) || 100)
+  );
   try {
-    const docs = await Score.find({}).sort({ points: -1 }).skip((page - 1) * limit).limit(limit).lean();
+    const docs = await Score.find({})
+      .sort({ points: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
     res.json(docs.map(d => ({ rollNo: d.rollNo, points: d.points })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// ✅ Backward compatibility (redirect /points → /scores)
+app.use('/api/points', (req, res, next) => {
+  req.url = req.url.replace(/^\/points/, '/scores');
+  next();
 });
 
 // --- Start server ---
