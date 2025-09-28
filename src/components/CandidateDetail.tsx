@@ -20,11 +20,13 @@ import { Candidate, CandidateScore } from "@/types/candidate";
 interface CandidateDetailProps {
   candidate: Candidate;
   onBack: () => void;
+  userHasRated?: boolean;
 }
 
 export const CandidateDetail: React.FC<CandidateDetailProps> = ({
   candidate,
   onBack,
+  userHasRated = false,
 }) => {
   const [scores, setScores] = useState<CandidateScore>({
     technicalSkills: 5,
@@ -298,6 +300,7 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                   <Button
                     className="w-full"
                     variant="secondary"
+                    disabled={userHasRated}
                     onClick={async () => {
                       // compute sum of the numeric fields
                       const sum =

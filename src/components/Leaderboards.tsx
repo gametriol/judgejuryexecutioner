@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CandidateDetail } from "./CandidateDetail";
 
 type CandidateItem = {
   rollNo: string;
@@ -15,6 +16,7 @@ const PAGE_SIZES = [6, 12, 24];
 
 export default function Leaderboards() {
   const [items, setItems] = useState<CandidateItem[]>([]);
+  const [selected, setSelected] = useState<CandidateItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,6 +100,22 @@ export default function Leaderboards() {
   const start = (page - 1) * pageSize;
   const pageItems = items.slice(start, start + pageSize);
 
+  // current user from localStorage (same key as App)
+  const STORAGE_KEY = 'flux_current_user';
+  const currentUser = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } })();
+
+  if (selected) {
+    // Render CandidateDetail for the selected leaderboard item. Pass userHasRated so the detail view can disable updating.
+    const userHasRated = Boolean(currentUser && Array.isArray(selected.raters) && selected.raters.includes(currentUser));
+    return (
+      <CandidateDetail
+        candidate={selected.application}
+        onBack={() => setSelected(null)}
+        userHasRated={userHasRated}
+      />
+    );
+  }
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -130,7 +148,11 @@ export default function Leaderboards() {
             {pageItems.map((c: CandidateItem, index) => (
               <div
                 key={c.rollNo}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center gap-4"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelected(c)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelected(c); }}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg"
               >
                 <div className="text-lg font-bold text-gray-500 w-8 text-center">
                   #{start + index + 1}
