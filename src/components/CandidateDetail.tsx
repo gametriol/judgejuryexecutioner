@@ -47,6 +47,8 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
     }));
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   // removed status/comments UI per new requirement
 
   const parseGithubLinks = (githubProfile: string) => {
@@ -300,8 +302,11 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                   <Button
                     className="w-full"
                     variant="secondary"
-                    disabled={userHasRated}
+                    disabled={userHasRated || submitting}
+                    aria-busy={submitting}
                     onClick={async () => {
+                      if (userHasRated || submitting) return;
+                      setSubmitting(true);
                       // compute sum of the numeric fields
                       const sum =
                         Number(scores.technicalSkills || 0) +
@@ -339,6 +344,7 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                           window.alert(
                             `Failed to add points: ${res.status} ${txt}`
                           );
+                          setSubmitting(false);
                           return;
                         }
 
@@ -351,15 +357,18 @@ export const CandidateDetail: React.FC<CandidateDetailProps> = ({
                         // refresh so the rated candidate is removed from the list (filtered by backend)
                         try {
                           window.location.reload();
-                        } catch (_) {}
+                        } catch (_) {
+                          setSubmitting(false);
+                        }
                       } catch (err) {
                         console.error(err);
                         window.alert("Error sending points to backend");
+                        setSubmitting(false);
                       }
                     }}
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Update Scores
+                    {submitting ? 'Submitting...' : 'Update Scores'}
                   </Button>
                 </div>
 
